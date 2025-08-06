@@ -53,7 +53,7 @@ print("PCA Loadings:\n", loadings)
 ### ---- RFE for feature selection ---- ###
 X_rfe = drugs[features_for_pca]
 y_rfe = drugs['Binding Affinity (Ki/IC50)']
-
+drugs.drop(columns=['Binding Affinity (Ki/IC50)'],axis=1)
 model = LinearRegression()
 rfe = RFE(model, n_features_to_select=6)
 rfe = rfe.fit(X_rfe, y_rfe)
@@ -71,7 +71,7 @@ print("Dropped features:", list(features_to_drop))
 print("Remaining features:", list(X_reduced.columns))
 
 ### ---- CLASSIFICATION (Suitability) ---- ###
-classification_features = ['TPSA', 'H-Bond Donors', 'Binding Affinity (Ki/IC50)',
+classification_features = ['TPSA', 'H-Bond Donors', 
                            'Bioavailability', 'Toxicity Numeric', 'QED Score']
 
 X_cls = drugs[classification_features]
