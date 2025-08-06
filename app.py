@@ -6,7 +6,7 @@ from drug_discovery import get_model
 @st.cache_resource
 def load_model():
     return get_model()  # Get model from drug_discovery.py
-drugs['Binding Affinity (Ki/IC50)'] = pd.to_numeric(drugs['Binding Affinity (Ki/IC50)'], errors='coerce')
+
 drugs.drop(columns=['Binding Affinity (Ki/IC50)'],axis=1)
 
 # Prediction function
