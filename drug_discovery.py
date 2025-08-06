@@ -19,11 +19,12 @@ import joblib
 # Load your dataset (assumes 'drugs.csv' or replace with correct path)
 drugs = pd.read_csv("data.csv")
  # <-- Replace with your actual CSV path
-
+drugs.columns = drugs.columns.str.strip().str.encode('ascii', 'ignore').str.decode('ascii')
 # Ensure numeric columns are parsed correctly
-numeric_columns = ['TPSA', 'H-Bond Donors', 'Binding Affinity (Ki/IC50)',
-                   'Bioavailability', 'QED Score', 'Toxicity Numeric']
-for col in numeric_columns:
+columns = ["LogP", "TPSA", "H-Bond Donors", "H-Bond Acceptors", "Binding Affinity", 
+           "Target Pro", "Bioavailability", "Toxicity Class (LD50)", "QED Score"]
+
+for col in columns:
     drugs[col] = pd.to_numeric(drugs[col], errors='coerce')
 
 # Drop rows with NaN values
