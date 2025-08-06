@@ -24,6 +24,8 @@ drugs.columns = drugs.columns.str.strip().str.encode('ascii', 'ignore').str.deco
 columns = ["LogP", "TPSA", "H-Bond Donors", "H-Bond Acceptors", "Binding Affinity", 
            "Target Pro", "Bioavailability", "Toxicity Class (LD50)", "QED Score"]
 
+drugs['Binding Affinity (Ki/IC50)'] = pd.to_numeric(drugs['Binding Affinity (Ki/IC50)'], errors='coerce')
+
 for col in columns:
     drugs[col] = pd.to_numeric(drugs[col], errors='coerce')
 
