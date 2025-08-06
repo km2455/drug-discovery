@@ -1,96 +1,126 @@
+import pandas as pd
+import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-features = ['Molecular Weight','LogP','TPSA','H-Bond Donors','H-Bond Acceptors','Binding Affinity (Ki/IC50)','Target Protein(s)','Bioavailability','Toxicity Numeric','QED Score']                                                               X = drugs[features] 
-X_scaled = StandardScaler().fit_transform(X)
-pca = PCA()
-pca.fit(X_scaled)                                                                                                                                                     loadings = pd.DataFrame(pca.components_.T, columns=[f'PC{i+1}' for i in range(len(X.columns))], index=X.columns)
-print(loadings)                                                                                                                                                          X_dropped = X.drop(['H-Bond Donors', 'H-Bond Acceptors', 'Bioavailability'], axis=1, errors='ignore')X_dropped = X.drop(['H-Bond Donors', 'H-Bond Acceptors', 'Bioavailability'], axis=1, errors='ignore')                                                                                                                                            np.seterr(divide='warn', invalid='warn')
 from sklearn.feature_selection import RFE
-from sklearn.linear_model import LinearRegression                                                                                              y = drugs['Binding Affinity (Ki/IC50)'] 
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    classification_report,
+    mean_squared_error,
+    r2_score
+)
+from xgboost import XGBRegressor
+from sklearn.ensemble import RandomForestRegressor
+import joblib
+
+# Load your dataset (assumes 'drugs.csv' or replace with correct path)
+drugs = pd.read_csv(r"C:\Users\pc\Desktop\DRUG\Newly_Discovered_Compounds_50 (1).csv")
+ # <-- Replace with your actual CSV path
+
+# Ensure numeric columns are parsed correctly
+numeric_columns = ['TPSA', 'H-Bond Donors', 'Binding Affinity (Ki/IC50)',
+                   'Bioavailability', 'QED Score', 'Toxicity Numeric']
+for col in numeric_columns:
+    drugs[col] = pd.to_numeric(drugs[col], errors='coerce')
+
+# Drop rows with NaN values
+drugs = drugs.dropna()
+
+### ---- PCA ANALYSIS (optional, just for visualization) ---- ###
+features_for_pca = ['Molecular Weight', 'LogP', 'TPSA', 'H-Bond Donors',
+                    'H-Bond Acceptors', 'Binding Affinity (Ki/IC50)',
+                    'Target Protein(s)', 'Bioavailability', 'Toxicity Numeric', 'QED Score']
+
+X_pca = drugs[features_for_pca]
+X_pca_scaled = StandardScaler().fit_transform(X_pca)
+
+pca = PCA()
+pca.fit(X_pca_scaled)
+
+loadings = pd.DataFrame(
+    pca.components_.T,
+    columns=[f'PC{i+1}' for i in range(len(X_pca.columns))],
+    index=X_pca.columns
+)
+print("PCA Loadings:\n", loadings)
+
+### ---- RFE for feature selection ---- ###
+X_rfe = drugs[features_for_pca]
+y_rfe = drugs['Binding Affinity (Ki/IC50)']
+
 model = LinearRegression()
-
 rfe = RFE(model, n_features_to_select=6)
-rfe = rfe.fit(X, y)
+rfe = rfe.fit(X_rfe, y_rfe)
 
-print("Selected Features:", X.columns[rfe.support_])
-print("Feature Rankings:", rfe.ranking_)                                                                                                     eature_rankings = rfe.ranking_
+selected_features = X_rfe.columns[rfe.support_]
+feature_rankings = rfe.ranking_
 
-# Get names of features to drop (those with ranking > 1)
-features_to_drop = X.columns[feature_rankings > 1]
+print("Selected Features:", list(selected_features))
+print("Feature Rankings:", feature_rankings)
 
-# Drop those features
-X_reduced = X.drop(columns=features_to_drop)
-
-# Optional: Update main dataframe (if applicable)
-# df = df.drop(columns=features_to_drop)
-
-# Output
+# Drop unimportant features
+features_to_drop = X_rfe.columns[feature_rankings > 1]
+X_reduced = X_rfe.drop(columns=features_to_drop)
 print("Dropped features:", list(features_to_drop))
-print("Remaining features:", list(X_reduced.columns))                                                                                           drugs['TPSA'] = pd.to_numeric(drugs['TPSA'], errors='coerce')
-drugs['H-Bond Donors'] = pd.to_numeric(drugs['H-Bond Donors'], errors='coerce')
-drugs['Binding Affinity (Ki/IC50)'] = pd.to_numeric(drugs['Binding Affinity (Ki/IC50)'], errors='coerce')
-drugs['Bioavailability'] = pd.to_numeric(drugs['Bioavailability'], errors='coerce')
-drugs['QED Score'] = pd.to_numeric(drugs['QED Score'], errors='coerce')                                                 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report                                      features = ['TPSA', 'H-Bond Donors', 'Binding Affinity (Ki/IC50)',
-       'Bioavailability', 'Toxicity Numeric', 'QED Score']
-X = drugs[features]
-Y= drugs['Suitability']
+print("Remaining features:", list(X_reduced.columns))
+
+### ---- CLASSIFICATION (Suitability) ---- ###
+classification_features = ['TPSA', 'H-Bond Donors', 'Binding Affinity (Ki/IC50)',
+                           'Bioavailability', 'Toxicity Numeric', 'QED Score']
+
+X_cls = drugs[classification_features]
+Y_cls = drugs['Suitability']  # Ensure it's binary or multi-class
 
 # Normalize
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+scaler_cls = StandardScaler()
+X_cls_scaled = scaler_cls.fit_transform(X_cls)
 
 # Train-test split
-X_train, X_test, Y_train, Y_test = train_test_split(X_scaled, Y, test_size=0.2, random_state=42)                      from sklearn.linear_model import LogisticRegressionlog_model = LogisticRegression()
-log_model.fit(X_train, Y_train)
+X_train_cls, X_test_cls, Y_train_cls, Y_test_cls = train_test_split(
+    X_cls_scaled, Y_cls, test_size=0.2, random_state=42)
 
-log_preds = log_model.predict(X_test)
+# Logistic Regression
+log_model = LogisticRegression()
+log_model.fit(X_train_cls, Y_train_cls)
+log_preds = log_model.predict(X_test_cls)
 
-print("Logistic Regression")
-print("Accuracy:", accuracy_score(Y_test, log_preds))
-print(confusion_matrix(Y_test, log_preds))
-print(classification_report(Y_test, log_preds))                                                                                                   !pip install xgboost                                                                                                                                        from xgboost import XGBRegressor
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split                                                                                        X_train, X_test, y_train, y_test = train_test_split(X_reduced, y, test_size=0.2, random_state=42)
+print("\n--- Logistic Regression Classification ---")
+print("Accuracy:", accuracy_score(Y_test_cls, log_preds))
+print(confusion_matrix(Y_test_cls, log_preds))
+print(classification_report(Y_test_cls, log_preds))
 
-# Initialize model
+### ---- REGRESSION MODELS ---- ###
+X_train_reg, X_test_reg, y_train_reg, y_test_reg = train_test_split(
+    X_reduced, y_rfe, test_size=0.2, random_state=42)
+
+# XGBoost Regressor
 xgb_reg = XGBRegressor()
-xgb_reg.fit(X_train, y_train)
+xgb_reg.fit(X_train_reg, y_train_reg)
+y_pred_xgb = xgb_reg.predict(X_test_reg)
 
-y_pred = xgb_reg.predict(X_test)
+print("\n--- XGBoost Regression ---")
+print("MSE:", mean_squared_error(y_test_reg, y_pred_xgb))
+print("R² Score:", r2_score(y_test_reg, y_pred_xgb))
 
-# Evaluation
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-
-print("XGBoost Regression MSE:", mse)
-print("XGBoost R2 Score:", r2)                                                                                                                         from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, r2_score
-
-# Initialize and train the model
+# Random Forest Regressor
 rf = RandomForestRegressor(n_estimators=100, random_state=42)
-rf.fit(X_train, y_train)
+rf.fit(X_train_reg, y_train_reg)
+y_pred_rf = rf.predict(X_test_reg)
 
-# Make predictions
-y_pred = rf.predict(X_test)
+print("\n--- Random Forest Regression ---")
+print("MSE:", mean_squared_error(y_test_reg, y_pred_rf))
+print("R² Score:", r2_score(y_test_reg, y_pred_rf))
 
-# Evaluate
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-
-print("Random Forest Regression MSE:", mse)
-print("Random Forest R2 Score:", r2)          import joblib
-
-# Save classification (suitability) model
+### ---- SAVE MODELS ---- ###
 joblib.dump(log_model, "logistic_regression_model.pkl")
-joblib.dump(scaler, "scaler_cls.pkl")
-
-# Save regression models
+joblib.dump(scaler_cls, "scaler_cls.pkl")
 joblib.dump(rf, "random_forest_model.pkl")
 joblib.dump(xgb_reg, "xgboost_model.pkl")
-joblib.dump(scaler, "scaler_reg.pkl")  # Assuming same scaler for regression
+joblib.dump(StandardScaler().fit(X_reduced), "scaler_reg.pkl")  # Regression scaler
 
+# Optional getter for Streamlit app
 def get_model():
-    # Train or return your model here
-    return trained_model
+    return log_model  # or change based on your UI model switch

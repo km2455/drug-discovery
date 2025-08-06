@@ -1,16 +1,13 @@
-
 import streamlit as st
 import pandas as pd
-import numpy as np
-import joblib
-from drug_discovery import get_model 
+from drug_discovery import get_model
 
-# Load the trained ML model (update filename if needed)
+# Load the trained ML model
 @st.cache_resource
 def load_model():
-    return get_model() # Replace with your actual model path
+    return get_model()  # Get model from drug_discovery.py
 
-# Prediction function using user inputs
+# Prediction function
 def predict_drug_properties(h_bond_acceptors, binding_affinity, bioavailability, toxicity_numeric, qed_score):
     input_df = pd.DataFrame([{
         "H-Bond Acceptors": h_bond_acceptors,
