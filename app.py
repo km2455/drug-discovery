@@ -6,6 +6,7 @@ from drug_discovery import get_model
 @st.cache_resource
 def load_model():
     return get_model()  # Get model from drug_discovery.py
+drugs['Binding Affinity (Ki/IC50)'] = pd.to_numeric(drugs['Binding Affinity (Ki/IC50)'], errors='coerce')
 
 # Prediction function
 def predict_drug_properties(h_bond_acceptors, binding_affinity, bioavailability, toxicity_numeric, qed_score):
