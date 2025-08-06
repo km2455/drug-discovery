@@ -17,7 +17,7 @@ from sklearn.ensemble import RandomForestRegressor
 import joblib
 
 # Load your dataset (assumes 'drugs.csv' or replace with correct path)
-drugs = pd.read_csv(r"C:\Users\pc\Desktop\DRUG\Newly_Discovered_Compounds_50 (1).csv")
+drugs = pd.read_csv("data.csv")
  # <-- Replace with your actual CSV path
 
 # Ensure numeric columns are parsed correctly
