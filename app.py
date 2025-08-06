@@ -7,12 +7,13 @@ from drug_discovery import get_model
 def load_model():
     return get_model()  # Get model from drug_discovery.py
 drugs['Binding Affinity (Ki/IC50)'] = pd.to_numeric(drugs['Binding Affinity (Ki/IC50)'], errors='coerce')
+drugs.drop(columns=['Binding Affinity (Ki/IC50)'],axis=1)
 
 # Prediction function
 def predict_drug_properties(h_bond_acceptors, binding_affinity, bioavailability, toxicity_numeric, qed_score):
     input_df = pd.DataFrame([{
         "H-Bond Acceptors": h_bond_acceptors,
-        "Binding Affinity (Ki/IC50)": binding_affinity,
+      
         "Bioavailability": bioavailability,
         "Toxicity Numeric": toxicity_numeric,
         "QED score": qed_score
